@@ -13,26 +13,38 @@ on:
 permissions:
   contents: write
 
-concurrency: koi
+concurrency:
+  group: koi-${{ github.ref }}
+  cancel-in-progress: false
 
 jobs:
   koi:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v7
+        with:
+          fetch-depth: 0
+
       - uses: yalongwastaken/git-koi@v1
         with:
           body: white
           output-dir: koi
+
       - name: Commit the koi if it changed
         shell: bash
         run: |
           git add koi/koi.gif
+
           if git diff --cached --quiet; then
             echo "The koi is unchanged; nothing to commit."
             exit 0
           fi
+
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+
           git commit --quiet --message "koi: draw the day's koi"
-          git push --quiet
+
+          git fetch origin main
+          git rebase origin/main
+          git push origin HEAD:main
